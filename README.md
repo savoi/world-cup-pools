@@ -5,6 +5,10 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
+Copy config/groupStagePicks.json.sample to config config/groupStagePicks.json and enter the required names, picks, and seeds.
+
+Add your API-FOOTBALL api key to the environment variable FOOTBALL_API_KEY
+
 First, run the development server:
 
 ```bash
