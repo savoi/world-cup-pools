@@ -1,3 +1,4 @@
+import clientPromise from '../lib/mongodb'
 import Grid from '@mui/material/Grid';
 import Head from 'next/head';
 import styles from '../styles/Home.module.css';
@@ -202,6 +203,10 @@ export async function getStaticProps() {
   const res = await fetch(apiEndpoint, requestOptions)
   const fixtures = await res.json()
 
+  const client = await clientPromise
+  const db = client.db("world-cup-pools")
+  const entrants = await db.collection('2022').find({}).toArray()
+
   function createEntrant(name, seed, pick1, pick2) {
     return {
       name,
@@ -214,8 +219,7 @@ export async function getStaticProps() {
     }
   }
 
-  let entrantJSON = require('../config/groupStagePicks.json');
-  let entrantData = entrantJSON.map((entrant) => {
+  let entrantData = entrants.map((entrant) => {
     return createEntrant(entrant.name, entrant.seed, entrant.pick1, entrant.pick2);
   });
 
