@@ -30,39 +30,65 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
 
       <main className={styles.main}>
         <Grid container justifyContent="center" spacing={4}>
-          <Grid item xs={12}>
+          <Grid item>
             <Typography variant="h2" align="center">2022 World Cup Pool</Typography>  
           </Grid>
-          <Grid item xs={12} md={9}>
+          <Grid item>
             <TableContainer component={Paper}>
               <Table title="Pool Entrants">
+                <caption>
+                  <Typography>Group Stage Points: 3 points for a win, 1 point for a draw, 1 point for each goal scored</Typography>
+                  <Typography>Knockout Stage Points: 5 points for a win, 1 point for each goal scored</Typography>
+                </caption>
                 <TableHead>
                   <TableRow key="Header1">
-                    <TableCell align="center" colSpan={7}>
-                      <Typography variant="h5">Group Stage Standings</Typography>
+                    <TableCell align="center" colSpan={9}>
+                      <Typography variant="h5">Group and Knockout Stage Standings</Typography>
                     </TableCell>
                   </TableRow>
                   <TableRow key="Header2">
                     <TableCell>
-                      <Typography>Position</Typography>
+                      <Tooltip title="Position" placement="top" arrow>
+                        <Typography>POS</Typography>
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <Typography>Entrant</Typography>
+                      <Typography>NAME</Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography>1st Pick</Typography>
+                      <Tooltip title="Group stage 1st pick" placement="top" arrow>
+                        <Typography>PICK #1</Typography>
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <Typography>1st Pick Points</Typography>
+                      <Tooltip title="Group stage 1st pick points" placement="top" arrow>
+                        <Typography>PTS</Typography>
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <Typography>2nd Pick</Typography>
+                      <Tooltip title="Group stage 2nd pick" placement="top" arrow>
+                        <Typography>PICK #2</Typography>
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <Typography>2nd Pick Points</Typography>
+                      <Tooltip title="Group stage 2nd pick points" placement="top" arrow>
+                        <Typography>PTS</Typography>
+                      </Tooltip>
                     </TableCell>
                     <TableCell>
-                      <Typography>Total Points</Typography>
+                      <Tooltip title="Round of 16 pick" placement="top" arrow>
+                        <Typography>PICK R16</Typography>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                    <Tooltip title="Round of 16 pick points" placement="top" arrow>
+                        <Typography>PTS</Typography>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Tooltip title="Total points from group stage and knockout round" placement="top" arrow>
+                        <Typography>TOTAL</Typography>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -92,6 +118,15 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
                       </TableCell>
                       <TableCell align="center">
                         <Typography>{entrant.pick2Points}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Stack direction="row" spacing={2}>
+                          <Flag code={teamData.find(country => country.name == entrant.pick3).countryCode} width="30" />
+                          <Typography>{entrant.pick3}</Typography>
+                        </Stack>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Typography>{entrant.pick3Points}</Typography>
                       </TableCell>
                       <TableCell align="center">
                         <Typography>{entrant.totalPoints}</Typography>
@@ -208,20 +243,22 @@ export async function getStaticProps() {
   const db = client.db("world-cup-pools")
   const entrants = await db.collection('2022').find({}).toArray()
 
-  function createEntrant(name, seed, pick1, pick2) {
+  function createEntrant(name, seed, pick1, pick2, pick3) {
     return {
       name,
       seed,
       pick1,
       pick2,
+      pick3,
       pick1Points: 0,
       pick2Points: 0,
+      pick3Points: 0,
       totalPoints: 0
     }
   }
 
   let entrantData = entrants.map((entrant) => {
-    return createEntrant(entrant.name, entrant.seed, entrant.pick1, entrant.pick2);
+    return createEntrant(entrant.name, entrant.seed, entrant.pick1, entrant.pick2, entrant.pick3);
   });
 
   function createCountry(name, countryCode, group) {
@@ -276,6 +313,7 @@ export async function getStaticProps() {
   ];
 
   let inProgressTeams = [];
+  const knockoutWinPoints = 5;
 
   fixtures.response.forEach((fixture) => {
     const homeTeam = fixture.teams.home.name;
@@ -290,25 +328,30 @@ export async function getStaticProps() {
       inProgressTeams.push(homeTeam, awayTeam);
     }
 
-    // Mark home and away goals scored and conceded
-    homeTeamObj.goalsForward += homeGoals;
-    homeTeamObj.goalsAgainst += awayGoals;
-    awayTeamObj.goalsForward += awayGoals;
-    awayTeamObj.goalsAgainst += homeGoals;
+    // Mark the round of the competition
+    const round = fixture.league.round;
 
-    if (homeGoals != null && awayGoals != null) {
-      // Mark draw
-      if (homeGoals == awayGoals) {
-        homeTeamObj.draws++;
-        awayTeamObj.draws++;
-      // Mark home win
-      } else if (homeGoals > awayGoals) {
-        homeTeamObj.wins++;
-        awayTeamObj.losses++;
-      // Mark away win
-      } else if (awayGoals > homeGoals) {
-        awayTeamObj.wins++;
-        homeTeamObj.losses++;
+    // Mark home and away goals scored and conceded in group stage
+    if (round.includes("Group Stage")) {
+      homeTeamObj.goalsForward += homeGoals;
+      homeTeamObj.goalsAgainst += awayGoals;
+      awayTeamObj.goalsForward += awayGoals;
+      awayTeamObj.goalsAgainst += homeGoals;
+  
+      if (homeGoals != null && awayGoals != null) {
+        // Mark draw
+        if (homeGoals == awayGoals) {
+          homeTeamObj.draws++;
+          awayTeamObj.draws++;
+        // Mark home win
+        } else if (homeGoals > awayGoals) {
+          homeTeamObj.wins++;
+          awayTeamObj.losses++;
+        // Mark away win
+        } else if (awayGoals > homeGoals) {
+          awayTeamObj.wins++;
+          homeTeamObj.losses++;
+        }
       }
     }
 
@@ -333,7 +376,23 @@ export async function getStaticProps() {
       const pick2Obj = teamData.find(country => country.name == entrant.pick2);
       entrant.pick1Points = pick1Obj.points + pick1Obj.goalsForward;
       entrant.pick2Points = pick2Obj.points + pick2Obj.goalsForward;
-      entrant.totalPoints = entrant.pick1Points + entrant.pick2Points;
+
+      // Round of 16
+      if (round == "Round of 16") {
+        if (entrant.pick3 == homeTeam) {
+          entrant.pick3Points += homeGoals;
+          if (homeGoals > awayGoals) {
+            entrant.pick3Points += knockoutWinPoints;
+          }
+        } else if (entrant.pick3 == awayTeam) {
+          entrant.pick3Points += awayGoals;
+          if (awayGoals > homeGoals) {
+            entrant.pick3Points += knockoutWinPoints;
+          }
+        }
+      }
+
+      entrant.totalPoints = entrant.pick1Points + entrant.pick2Points + entrant.pick3Points;
     });
 
     // Sort entrant data by total points
