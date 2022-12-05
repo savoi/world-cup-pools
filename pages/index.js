@@ -139,8 +139,8 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
           </Grid>
 
         {groups.map((groupName) => (
-          <Grid item xs={12} md={9}>
-            <TableContainer key={groupName} component={Paper}>
+          <Grid key={groupName} item xs={12} md={9}>
+            <TableContainer component={Paper}>
               <Table>
                 <TableHead>
                   <TableRow key="Header">
@@ -381,12 +381,12 @@ export async function getStaticProps() {
       if (round == "Round of 16") {
         if (entrant.pick3 == homeTeam) {
           entrant.pick3Points += homeGoals;
-          if (homeGoals > awayGoals) {
+          if (fixture.teams.home.winner) {
             entrant.pick3Points += knockoutWinPoints;
           }
         } else if (entrant.pick3 == awayTeam) {
           entrant.pick3Points += awayGoals;
-          if (awayGoals > homeGoals) {
+          if (fixture.teams.away.winner) {
             entrant.pick3Points += knockoutWinPoints;
           }
         }
