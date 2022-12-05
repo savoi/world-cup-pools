@@ -12,8 +12,8 @@ import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
 
 
 const groups = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
