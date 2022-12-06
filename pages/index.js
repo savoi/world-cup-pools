@@ -1,4 +1,5 @@
 import clientPromise from '../lib/mongodb'
+import CollapsibleRow from '../src/CollapsibleRow'
 import Flag from 'react-world-flags'
 import Grid from '@mui/material/Grid'
 import Head from 'next/head'
@@ -12,8 +13,8 @@ import TableCell from '@mui/material/TableCell'
 import TableContainer from '@mui/material/TableContainer'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
-import Tooltip from '@mui/material/Tooltip';
-import Typography from '@mui/material/Typography';
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
 
 
 const groups = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -42,11 +43,12 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
                 </caption>
                 <TableHead>
                   <TableRow key="Header1">
-                    <TableCell align="center" colSpan={9}>
+                    <TableCell align="center" colSpan={10}>
                       <Typography variant="h5">Group and Knockout Stage Standings</Typography>
                     </TableCell>
                   </TableRow>
                   <TableRow key="Header2">
+                    <TableCell />
                     <TableCell>
                       <Tooltip title="Position" placement="top" arrow>
                         <Typography>POS</Typography>
@@ -93,45 +95,8 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {entrantData.map((entrant, index) => (
-                    <TableRow key={entrant.name}>
-                      <TableCell align="center">
-                        <Typography>{index + 1}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography>{entrant.name}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={2}>
-                          <Flag code={teamData.find(country => country.name == entrant.pick1).countryCode} width="30" />
-                          <Typography>{entrant.pick1} {inProgressTeams.includes(entrant.pick1) && <LinearProgress color="secondary"/>}</Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography>{entrant.pick1Points}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={2}>
-                          <Flag code={teamData.find(country => country.name == entrant.pick2).countryCode} width="30" />
-                          <Typography>{entrant.pick2} {inProgressTeams.includes(entrant.pick2) && <LinearProgress color="secondary"/>}</Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography>{entrant.pick2Points}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={2}>
-                          <Flag code={teamData.find(country => country.name == entrant.pick3).countryCode} width="30" />
-                          <Typography>{entrant.pick3}</Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography>{entrant.pick3Points}</Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Typography>{entrant.totalPoints}</Typography>
-                      </TableCell>
-                    </TableRow>
+                  {entrantData.map((entrant) => (
+                    <CollapsibleRow key={entrant.name} entrant={entrant} teamData={teamData} />
                   ))}
                 </TableBody>
               </Table>
@@ -253,7 +218,8 @@ export async function getStaticProps() {
       pick1Points: 0,
       pick2Points: 0,
       pick3Points: 0,
-      totalPoints: 0
+      totalPoints: 0,
+      position: 0
     }
   }
 
@@ -273,7 +239,8 @@ export async function getStaticProps() {
       goalsForward: 0,
       goalsAgainst: 0,
       goalDifference: 0,
-      points: 0
+      points: 0,
+      goalsForwardR16: 0
     };
   }
 
@@ -370,6 +337,12 @@ export async function getStaticProps() {
       if (b.goalDifference < a.goalDifference) return -1;
     });
 
+    // Update round of 16 data
+    if (round == "Round of 16") {
+      homeTeamObj.goalsForwardR16 = homeGoals;
+      awayTeamObj.goalsForwardR16 = awayGoals;
+    }
+
     // Update entrant data
     entrantData.forEach((entrant) => {
       const pick1Obj = teamData.find(country => country.name == entrant.pick1);
@@ -398,6 +371,11 @@ export async function getStaticProps() {
     // Sort entrant data by total points
     entrantData.sort((a, b) => {
       return b.totalPoints - a.totalPoints;
+    });
+
+    // Assign entrant ranking
+    entrantData.forEach((entrant, index) => {
+      entrant.position = index + 1;
     });
   });
 
