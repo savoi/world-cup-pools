@@ -38,8 +38,9 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
             <TableContainer component={Paper}>
               <Table title="Pool Entrants">
                 <caption>
-                  <Typography>Group Stage Points: 3 points for a win, 1 point for a draw, 1 point for each goal scored</Typography>
-                  <Typography>Knockout Stage Points: 5 points for a win, 1 point for each goal scored</Typography>
+                  <Typography>Group Stage Points: 3 points for a win, 1 point for a draw, 1 point for each goal scored.</Typography>
+                  <Typography>Knockout Stage Points: 5 points for a win, 1 point for each goal scored.</Typography>
+                  <Typography>Tie-Breaker: Goals scored by teams/picks in their respective tournament stage.</Typography>
                 </caption>
                 <TableHead>
                   <TableRow key="Header1">
@@ -219,7 +220,8 @@ export async function getStaticProps() {
       pick2Points: 0,
       pick3Points: 0,
       totalPoints: 0,
-      position: 0
+      position: 0,
+      goalsForward: 0
     }
   }
 
@@ -347,8 +349,10 @@ export async function getStaticProps() {
     entrantData.forEach((entrant) => {
       const pick1Obj = teamData.find(country => country.name == entrant.pick1);
       const pick2Obj = teamData.find(country => country.name == entrant.pick2);
+      const pick3Obj = teamData.find(country => country.name == entrant.pick3);
       entrant.pick1Points = pick1Obj.points + pick1Obj.goalsForward;
       entrant.pick2Points = pick2Obj.points + pick2Obj.goalsForward;
+      entrant.goalsForward += pick1Obj.goalsForward + pick2Obj.goalsForward + pick3Obj.goalsForwardR16;
 
       // Round of 16
       if (round == "Round of 16") {
@@ -368,9 +372,12 @@ export async function getStaticProps() {
       entrant.totalPoints = entrant.pick1Points + entrant.pick2Points + entrant.pick3Points;
     });
 
-    // Sort entrant data by total points
+    // Sort entrant data by total points then by goals scored by picks
     entrantData.sort((a, b) => {
-      return b.totalPoints - a.totalPoints;
+      if (b.totalPoints > a.totalPoints) return 1;
+      if (b.totalPoints < a.totalPoints) return -1;
+      if (b.goalsForward > a.goalsForward) return 1;
+      if (b.goalsForward < a.goalsForward) return -1;
     });
 
     // Assign entrant ranking
