@@ -352,7 +352,7 @@ export async function getStaticProps() {
       const pick3Obj = teamData.find(country => country.name == entrant.pick3);
       entrant.pick1Points = pick1Obj.points + pick1Obj.goalsForward;
       entrant.pick2Points = pick2Obj.points + pick2Obj.goalsForward;
-      entrant.goalsForward += pick1Obj.goalsForward + pick2Obj.goalsForward + pick3Obj.goalsForwardR16;
+      entrant.goalsForward = pick1Obj.goalsForward + pick2Obj.goalsForward + pick3Obj.goalsForwardR16;
 
       // Round of 16
       if (round == "Round of 16") {
