@@ -31,10 +31,10 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
 
       <main className={styles.main}>
         <Grid container justifyContent="center" spacing={4}>
-          <Grid item>
+          <Grid item xs={12}>
             <Typography variant="h2" align="center">2022 World Cup Pool</Typography>  
           </Grid>
-          <Grid item>
+          <Grid item xs={12}>
             <TableContainer component={Paper}>
               <Table title="Pool Entrants">
                 <caption>
