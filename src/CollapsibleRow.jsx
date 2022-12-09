@@ -1,16 +1,17 @@
-import * as React from 'react';
-import PropTypes from 'prop-types';
-import Collapse from '@mui/material/Collapse';
-import IconButton from '@mui/material/IconButton';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import * as React from 'react'
+import PropTypes from 'prop-types'
+import Collapse from '@mui/material/Collapse'
+import IconButton from '@mui/material/IconButton'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell, { tableCellClasses } from '@mui/material/TableCell'
+import TableRow from '@mui/material/TableRow'
+import Typography from '@mui/material/Typography'
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp'
 import Flag from 'react-world-flags'
 import Stack from '@mui/material/Stack'
+
 
 function CollapsibleRow(props) {
     const { entrant, teamData } = props;
@@ -36,7 +37,7 @@ function CollapsibleRow(props) {
           </TableCell>
           <TableCell>
             <Stack direction="row" spacing={2}>
-                <Flag code={teamData.find(country => country.name == entrant.pick1).countryCode} width="30" />
+                <Flag code={teamData.find(country => country.name == entrant.pick1)?.countryCode} width="30" />
                 <Typography>{entrant.pick1}</Typography>
             </Stack>
           </TableCell>
@@ -45,7 +46,7 @@ function CollapsibleRow(props) {
           </TableCell>
           <TableCell>
             <Stack direction="row" spacing={2}>
-                <Flag code={teamData.find(country => country.name == entrant.pick2).countryCode} width="30" />
+                <Flag code={teamData.find(country => country.name == entrant.pick2)?.countryCode} width="30" />
                 <Typography>{entrant.pick2}</Typography>
             </Stack>
           </TableCell>
@@ -54,21 +55,30 @@ function CollapsibleRow(props) {
           </TableCell>
           <TableCell>
             <Stack direction="row" spacing={2}>
-                <Flag code={teamData.find(country => country.name == entrant.pick3).countryCode} width="30" />
+                <Flag code={teamData.find(country => country.name == entrant.pick3)?.countryCode} width="30" />
                 <Typography>{entrant.pick3}</Typography>
             </Stack>
           </TableCell>
           <TableCell align="center">
             <Typography>{entrant.pick3Points}</Typography>
           </TableCell>
+          <TableCell>
+            <Stack direction="row" spacing={2}>
+              <Flag code={teamData.find(country => country.name == entrant.pick4)?.countryCode} width="30" />
+              <Typography>{entrant.pick4}</Typography>
+            </Stack>
+          </TableCell>
+          <TableCell align="center">
+            <Typography>{entrant.pick4Points}</Typography>
+          </TableCell>
           <TableCell align="center">
             <Typography>{entrant.totalPoints}</Typography>
           </TableCell>
         </TableRow>
         <TableRow>
-          <TableCell colSpan={10} style={{ padding: 0 }}>
+          <TableCell colSpan={12} style={{ padding: 0 }}>
             <Collapse in={open} timeout="auto" unmountOnExit>
-              <Table>
+              <Table sx={{ [`& .${tableCellClasses.root}`]: { borderBottom: "none" } }}>
                 <TableBody>
                   <TableRow>
                     <TableCell />
@@ -79,6 +89,8 @@ function CollapsibleRow(props) {
                     <TableCell>GF: {teamData.find(country => country.name == entrant.pick2).goalsForward}</TableCell>
                     <TableCell />
                     <TableCell>GF: {teamData.find(country => country.name == entrant.pick3).goalsForwardR16}</TableCell>
+                    <TableCell />
+                    <TableCell>GF: {teamData.find(country => country.name == entrant.pick4)?.goalsForwardQF}</TableCell>
                     <TableCell />
                     <TableCell />
                   </TableRow>

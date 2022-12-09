@@ -44,7 +44,7 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
                 </caption>
                 <TableHead>
                   <TableRow key="Header1">
-                    <TableCell align="center" colSpan={10}>
+                    <TableCell align="center" colSpan={12}>
                       <Typography variant="h5">Group and Knockout Stage Standings</Typography>
                     </TableCell>
                   </TableRow>
@@ -85,6 +85,16 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
                     </TableCell>
                     <TableCell>
                     <Tooltip title="Round of 16 pick points" placement="top" arrow>
+                        <Typography>PTS</Typography>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip title="Quarter-final pick" placement="top" arrow>
+                        <Typography>PICK QF</Typography>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip title="Quarter-final pick points" placement="top" arrow>
                         <Typography>PTS</Typography>
                       </Tooltip>
                     </TableCell>
@@ -209,16 +219,18 @@ export async function getStaticProps() {
   const db = client.db("world-cup-pools")
   const entrants = await db.collection('2022').find({}).toArray()
 
-  function createEntrant(name, seed, pick1, pick2, pick3) {
+  function createEntrant(name, seed, pick1, pick2, pick3, pick4) {
     return {
       name,
       seed,
       pick1,
       pick2,
       pick3,
+      pick4: pick4 ?? "-",
       pick1Points: 0,
       pick2Points: 0,
       pick3Points: 0,
+      pick4Points: 0,
       totalPoints: 0,
       position: 0,
       goalsForward: 0
@@ -226,7 +238,7 @@ export async function getStaticProps() {
   }
 
   let entrantData = entrants.map((entrant) => {
-    return createEntrant(entrant.name, entrant.seed, entrant.pick1, entrant.pick2, entrant.pick3);
+    return createEntrant(entrant.name, entrant.seed, entrant.pick1, entrant.pick2, entrant.pick3, entrant.pick4);
   });
 
   function createCountry(name, countryCode, group) {
@@ -242,7 +254,8 @@ export async function getStaticProps() {
       goalsAgainst: 0,
       goalDifference: 0,
       points: 0,
-      goalsForwardR16: 0
+      goalsForwardR16: 0,
+      goalsForwardQF: 0
     };
   }
 
@@ -298,92 +311,123 @@ export async function getStaticProps() {
     }
 
     // Mark the round of the competition
-    const round = fixture.league.round;
-
-    // Mark home and away goals scored and conceded in group stage
+    let round = fixture.league.round;
     if (round.includes("Group Stage")) {
-      homeTeamObj.goalsForward += homeGoals;
-      homeTeamObj.goalsAgainst += awayGoals;
-      awayTeamObj.goalsForward += awayGoals;
-      awayTeamObj.goalsAgainst += homeGoals;
-  
-      if (homeGoals != null && awayGoals != null) {
-        // Mark draw
-        if (homeGoals == awayGoals) {
-          homeTeamObj.draws++;
-          awayTeamObj.draws++;
-        // Mark home win
-        } else if (homeGoals > awayGoals) {
-          homeTeamObj.wins++;
-          awayTeamObj.losses++;
-        // Mark away win
-        } else if (awayGoals > homeGoals) {
-          awayTeamObj.wins++;
-          homeTeamObj.losses++;
-        }
-      }
+      round = "Group Stage"; 
     }
 
-    // Compute matches played and points totals
-    teamData.forEach((team) => {
-      team.matchesPlayed = team.wins + team.draws + team.losses;
-      team.points = 3 * team.wins + team.draws;
-      team.goalDifference = team.goalsForward - team.goalsAgainst;
-    });
+    switch(round) {
+      case "Group Stage":
+        let homeEntrantGS1 = entrantData.find(entrant => entrant.pick1 == homeTeam);
+        let homeEntrantGS2 = entrantData.find(entrant => entrant.pick2 == homeTeam);
+        let awayEntrantGS1 = entrantData.find(entrant => entrant.pick1 == awayTeam);
+        let awayEntrantGS2 = entrantData.find(entrant => entrant.pick2 == awayTeam);
 
-    // Sort teams based on points total
-    teamData.sort((a, b) => {
-      if (b.points > a.points) return 1;
-      if (b.points < a.points) return -1;
-      if (b.goalDifference > a.goalDifference) return 1;
-      if (b.goalDifference < a.goalDifference) return -1;
-    });
-
-    // Update round of 16 data
-    if (round == "Round of 16") {
-      homeTeamObj.goalsForwardR16 = homeGoals;
-      awayTeamObj.goalsForwardR16 = awayGoals;
-    }
-
-    // Update entrant data
-    entrantData.forEach((entrant) => {
-      const pick1Obj = teamData.find(country => country.name == entrant.pick1);
-      const pick2Obj = teamData.find(country => country.name == entrant.pick2);
-      const pick3Obj = teamData.find(country => country.name == entrant.pick3);
-      entrant.pick1Points = pick1Obj.points + pick1Obj.goalsForward;
-      entrant.pick2Points = pick2Obj.points + pick2Obj.goalsForward;
-      entrant.goalsForward = pick1Obj.goalsForward + pick2Obj.goalsForward + pick3Obj.goalsForwardR16;
-
-      // Round of 16
-      if (round == "Round of 16") {
-        if (entrant.pick3 == homeTeam) {
-          entrant.pick3Points += homeGoals;
-          if (fixture.teams.home.winner) {
-            entrant.pick3Points += knockoutWinPoints;
-          }
-        } else if (entrant.pick3 == awayTeam) {
-          entrant.pick3Points += awayGoals;
-          if (fixture.teams.away.winner) {
-            entrant.pick3Points += knockoutWinPoints;
+        // Mark home and away goals scored and conceded in group stage
+        homeTeamObj.goalsForward += homeGoals;
+        homeTeamObj.goalsAgainst += awayGoals;
+        awayTeamObj.goalsForward += awayGoals;
+        awayTeamObj.goalsAgainst += homeGoals;
+    
+        if (homeGoals != null && awayGoals != null) {
+          // Mark draw
+          if (homeGoals == awayGoals) {
+            homeTeamObj.draws++;
+            awayTeamObj.draws++;
+          // Mark home win
+          } else if (homeGoals > awayGoals) {
+            homeTeamObj.wins++;
+            awayTeamObj.losses++;
+          // Mark away win
+          } else if (awayGoals > homeGoals) {
+            awayTeamObj.wins++;
+            homeTeamObj.losses++;
           }
         }
-      }
+        // Compute matches played and points totals
+        [homeTeamObj, awayTeamObj].forEach((team) => {
+          team.matchesPlayed = team.wins + team.draws + team.losses;
+          team.points = 3 * team.wins + team.draws;
+          team.goalDifference = team.goalsForward - team.goalsAgainst;
+        });
+        // Sort teams based on points total
+        teamData.sort((a, b) => {
+          if (b.points > a.points) return 1;
+          if (b.points < a.points) return -1;
+          if (b.goalDifference > a.goalDifference) return 1;
+          if (b.goalDifference < a.goalDifference) return -1;
+        });
 
-      entrant.totalPoints = entrant.pick1Points + entrant.pick2Points + entrant.pick3Points;
-    });
+        if (homeEntrantGS1) {
+          homeEntrantGS1.pick1Points = homeTeamObj.points + homeTeamObj.goalsForward;
+        } else if (homeEntrantGS2) {
+          homeEntrantGS2.pick2Points = homeTeamObj.points + homeTeamObj.goalsForward;
+        }
 
-    // Sort entrant data by total points then by goals scored by picks
-    entrantData.sort((a, b) => {
-      if (b.totalPoints > a.totalPoints) return 1;
-      if (b.totalPoints < a.totalPoints) return -1;
-      if (b.goalsForward > a.goalsForward) return 1;
-      if (b.goalsForward < a.goalsForward) return -1;
-    });
+        if (awayEntrantGS1) {
+          awayEntrantGS1.pick1Points = awayTeamObj.points + awayTeamObj.goalsForward;
+        } else if (awayEntrantGS2) {
+          awayEntrantGS2.pick2Points = awayTeamObj.points + awayTeamObj.goalsForward;
+        }
+        break;
 
-    // Assign entrant ranking
-    entrantData.forEach((entrant, index) => {
-      entrant.position = index + 1;
-    });
+      case "Round of 16":
+        let homeEntrant16 = entrantData.find(entrant => entrant.pick3 == homeTeam);
+        let awayEntrant16 = entrantData.find(entrant => entrant.pick3 == awayTeam);
+
+        // Add goals scored to team data
+        homeTeamObj.goalsForwardR16 = homeGoals;
+        awayTeamObj.goalsForwardR16 = awayGoals;
+
+        // Add goals scored and wins to entrant points tally
+        homeEntrant16.pick3Points = homeGoals;
+        awayEntrant16.pick3Points = awayGoals;
+        if (fixture.teams.home.winner) homeEntrant16.pick3Points += knockoutWinPoints;
+        if (fixture.teams.away.winner) awayEntrant16.pick3Points += knockoutWinPoints;
+        homeEntrant16.totalPoints += homeEntrant16.pick3Points;
+        awayEntrant16.totalPoints += awayEntrant16.pick3Points;
+        break;
+        
+      case "Quarter-finals":
+        let homeEntrantQF = entrantData.find(entrant => entrant.pick4 == homeTeam);
+        let awayEntrantQF = entrantData.find(entrant => entrant.pick4 == awayTeam);
+
+        // Add goals scored to team data
+        homeTeamObj.goalsForwardQF = homeGoals;
+        awayTeamObj.goalsForwardQF = awayGoals;
+        
+        // Add goals scored and wins to entrant points tally
+        homeEntrantQF.pick4Points = homeGoals ?? 0;
+        awayEntrantQF.pick4Points = awayGoals ?? 0;
+        if (fixture.teams.home.winner) homeEntrantQF.pick4Points += knockoutWinPoints;
+        if (fixture.teams.away.winner) awayEntrantQF.pick4Points += knockoutWinPoints;
+        homeEntrantQF.totalPoints += homeEntrantQF.pick4Points;
+        awayEntrantQF.totalPoints += awayEntrantQF.pick4Points;
+        break;
+    }
+  });
+
+  // Update entrant data
+  entrantData.forEach((entrant) => {
+    const pick1Obj = teamData.find(country => country.name == entrant.pick1);
+    const pick2Obj = teamData.find(country => country.name == entrant.pick2);
+    const pick3Obj = teamData.find(country => country.name == entrant.pick3);
+    const pick4Obj = teamData.find(country => country.name == entrant.pick4);
+    entrant.goalsForward = pick1Obj.goalsForward + pick2Obj.goalsForward + pick3Obj.goalsForwardR16 + pick4Obj?.goalsForwardQF;
+    entrant.totalPoints = entrant.pick1Points + entrant.pick2Points + entrant.pick3Points + entrant?.pick4Points;
+  });
+
+  // Sort entrant data by total points then by goals scored by picks
+  entrantData.sort((a, b) => {
+    if (b.totalPoints > a.totalPoints) return 1;
+    if (b.totalPoints < a.totalPoints) return -1;
+    if (b.goalsForward > a.goalsForward) return 1;
+    if (b.goalsForward < a.goalsForward) return -1;
+  });
+
+  // Assign entrant ranking
+  entrantData.forEach((entrant, index) => {
+    entrant.position = index + 1;
   });
 
   return {
