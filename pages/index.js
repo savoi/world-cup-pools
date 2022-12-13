@@ -20,6 +20,7 @@ import Typography from '@mui/material/Typography'
 const groups = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
 export default function Home({ teamData, entrantData, inProgressTeams }) {
+  const numColumns = 14;
 
   return (
     <div className={styles.container}>
@@ -44,7 +45,7 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
                 </caption>
                 <TableHead>
                   <TableRow key="Header1">
-                    <TableCell align="center" colSpan={12}>
+                    <TableCell align="center" colSpan={numColumns}>
                       <Typography variant="h5">Group and Knockout Stage Standings</Typography>
                     </TableCell>
                   </TableRow>
@@ -95,6 +96,16 @@ export default function Home({ teamData, entrantData, inProgressTeams }) {
                     </TableCell>
                     <TableCell>
                       <Tooltip title="Quarter-final pick points" placement="top" arrow>
+                        <Typography>PTS</Typography>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip title="Semi-final pick" placement="top" arrow>
+                        <Typography>PICK SF</Typography>
+                      </Tooltip>
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip title="Semi-final pick points" placement="top" arrow>
                         <Typography>PTS</Typography>
                       </Tooltip>
                     </TableCell>
@@ -219,18 +230,20 @@ export async function getStaticProps() {
   const db = client.db("world-cup-pools")
   const entrants = await db.collection('2022').find({}).toArray()
 
-  function createEntrant(name, seed, pick1, pick2, pick3, pick4) {
+  function createEntrant(name, seed, pick1, pick2, pick3, pick4, pick5) {
     return {
       name,
       seed,
       pick1,
       pick2,
       pick3,
-      pick4: pick4 ?? "-",
+      pick4: pick4 ?? null,
+      pick5: pick5 ?? null,
       pick1Points: 0,
       pick2Points: 0,
       pick3Points: 0,
       pick4Points: 0,
+      pick5Points: 0,
       totalPoints: 0,
       position: 0,
       goalsForward: 0
@@ -238,7 +251,7 @@ export async function getStaticProps() {
   }
 
   let entrantData = entrants.map((entrant) => {
-    return createEntrant(entrant.name, entrant.seed, entrant.pick1, entrant.pick2, entrant.pick3, entrant.pick4);
+    return createEntrant(entrant.name, entrant.seed, entrant.pick1, entrant.pick2, entrant.pick3, entrant.pick4, entrant.pick5);
   });
 
   function createCountry(name, countryCode, group) {
@@ -255,7 +268,8 @@ export async function getStaticProps() {
       goalDifference: 0,
       points: 0,
       goalsForwardR16: 0,
-      goalsForwardQF: 0
+      goalsForwardQF: 0,
+      goalsForwardSF: 0
     };
   }
 
@@ -404,6 +418,23 @@ export async function getStaticProps() {
         homeEntrantQF.totalPoints += homeEntrantQF.pick4Points;
         awayEntrantQF.totalPoints += awayEntrantQF.pick4Points;
         break;
+
+      case "Semi-finals":
+        let homeEntrantSF = entrantData.find(entrant => entrant.pick5 == homeTeam);
+        let awayEntrantSF = entrantData.find(entrant => entrant.pick5 == awayTeam);
+
+        // Add goals scored to team data
+        homeTeamObj.goalsForwardSF = homeGoals;
+        awayTeamObj.goalsForwardSF = awayGoals;
+        
+        // Add goals scored and wins to entrant points tally
+        homeEntrantSF.pick5Points = homeGoals ?? 0;
+        awayEntrantSF.pick5Points = awayGoals ?? 0;
+        if (fixture.teams.home.winner) homeEntrantSF.pick5Points += knockoutWinPoints;
+        if (fixture.teams.away.winner) awayEntrantSF.pick5Points += knockoutWinPoints;
+        homeEntrantSF.totalPoints += homeEntrantSF.pick5Points;
+        awayEntrantSF.totalPoints += awayEntrantSF.pick5Points;
+        break;
     }
   });
 
@@ -413,8 +444,9 @@ export async function getStaticProps() {
     const pick2Obj = teamData.find(country => country.name == entrant.pick2);
     const pick3Obj = teamData.find(country => country.name == entrant.pick3);
     const pick4Obj = teamData.find(country => country.name == entrant.pick4);
-    entrant.goalsForward = pick1Obj.goalsForward + pick2Obj.goalsForward + pick3Obj.goalsForwardR16 + pick4Obj?.goalsForwardQF;
-    entrant.totalPoints = entrant.pick1Points + entrant.pick2Points + entrant.pick3Points + entrant?.pick4Points;
+    const pick5Obj = teamData.find(country => country.name == entrant.pick5);
+    entrant.goalsForward = pick1Obj.goalsForward + pick2Obj.goalsForward + pick3Obj.goalsForwardR16 + (pick4Obj?.goalsForwardQF ?? 0) + (pick5Obj?.goalsForwardSF ?? 0);
+    entrant.totalPoints = entrant.pick1Points + entrant.pick2Points + entrant.pick3Points + entrant?.pick4Points + entrant?.pick5Points;
   });
 
   // Sort entrant data by total points then by goals scored by picks
